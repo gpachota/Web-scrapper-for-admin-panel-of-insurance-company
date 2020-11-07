@@ -212,7 +212,7 @@ def get_shipment_date():
 
 
 def check_exists_by_xpath(xpath):
-    """Sprawdzenie czy ścieżka XPATH istnieje"""
+    """Check if xpath exist"""
     try:
         driver.find_element_by_xpath(xpath)
     except NoSuchElementException:

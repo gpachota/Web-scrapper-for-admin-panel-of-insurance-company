@@ -4,10 +4,8 @@ import pprint
 
 from Resources.CredentialData import SheetsData
 
-import numpy as np
-
 class SheetsImport():
-	"""Klasa importująca numery zgłoszeń z arkusza online oraz usuwająca wiersze z odczytanymi numerami zgłoszeń"""
+	"""Import Class - from Google Sheets to tickets_list"""
 
 	scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 	creds = ServiceAccountCredentials.from_json_keyfile_name('SheetsAPIkey.json', scope)
@@ -17,7 +15,7 @@ class SheetsImport():
 		self.sheet = self.client.open(SheetsData.SHEET_NAME).get_worksheet(1)
 
 	def importData(self):
-		"""Import numerów zgłoszeń z arkusza online"""
+		"""Import all tickets numbers from Google Sheets"""
 
 		tickets = self.sheet.get_all_values()
 		tickets_list = []
@@ -54,7 +52,7 @@ class SheetsImport():
 
 
 class SheetsExport():
-	"""Klasa exportująca dane na temat zgłoszenia do arkusza online"""
+	"""Export Class - from to Google Sheets"""
 
 	scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 	creds = ServiceAccountCredentials.from_json_keyfile_name('SheetsAPIkey.json', scope)
@@ -64,7 +62,7 @@ class SheetsExport():
 		self.sheet = self.client.open(SheetsData.SHEET_NAME).get_worksheet(2)
 
 	def exportAllData(self, tickets_list):
-		"""Export listy zgłoszeń wraz z uzupełnionymi danymi i dodanie nowych wierszy do arkusza online"""
+		"""Export all tickets"""
 
 		next_row = len(self.sheet.get_all_values())
 		for i in range(0, len(tickets_list)):
@@ -77,15 +75,15 @@ class SheetsExport():
 		return tickets_list
 
 	def exportSingleData(self, ticket):
-		"""Export pojedynczego zgłoszenia wraz z uzupełnionymi danymi i dodanie nowego wiersza"""
+		"""Export single ticket - in progress"""
 
 		next_row = len(self.sheet.get_all_values())
-		# row = []
-		# for i in range(11):
-		# 	row.append(ticket[i])
-		# print(row)
 		ticket.append([])
+
 		# self.sheet.update('A' + str(1 + next_row) + ':K' + str(1 + next_row), row)
+
+		# Need to change that for something easier.
+
 		self.sheet.update('A' + str(1 + next_row), ticket[0])
 		self.sheet.update('B' + str(1 + next_row), ticket[1])
 		self.sheet.update('C' + str(1 + next_row), ticket[2])
@@ -97,7 +95,7 @@ class SheetsExport():
 		self.sheet.update('I' + str(1 + next_row), ticket[8])
 		self.sheet.update('J' + str(1 + next_row), ticket[9])
 		self.sheet.update('K' + str(1 + next_row), ticket[10])
-		# self.sheet.update('A' + str(1 + next_row) + ':K' + str(1 + next_row), ticket[0])
+
 		return None
 
 
