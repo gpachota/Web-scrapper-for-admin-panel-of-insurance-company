@@ -1,0 +1,6 @@
+**.DS_Store
+
+Resources/CredentialData.py
+Resources/AdditionalData.py
+SheetsAPIkey.json
+test.py
