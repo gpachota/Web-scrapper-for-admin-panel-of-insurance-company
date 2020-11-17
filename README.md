@@ -37,6 +37,8 @@ To-do list:
 * Change export method from all to single
 * Change list of information to database
 * Change Google Chrome for non header version
+* Add Machine Learning functions to predict if we can order parts before we get the device
+* Clean up all data to database for future statistics
 
 ## Status
 Project is: _in progress_
