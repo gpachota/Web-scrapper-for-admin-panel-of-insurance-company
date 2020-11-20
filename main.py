@@ -14,7 +14,8 @@ from Resources.CredentialData import UserData, MainData
 
 from SheetsInOut import SheetsImport, SheetsExport
 
-
+chrome_options = webdriver.ChromeOptions()
+chrome_options.add_argument('--headless')
 
 
 
@@ -221,7 +222,7 @@ def check_exists_by_xpath(xpath):
 
 
 try:
-    driver = webdriver.Chrome(MainData.CHROME_EXECUTABLE_PATH)
+    driver = webdriver.Chrome(MainData.CHROME_EXECUTABLE_PATH, options=chrome_options)
     driver.get(MainData.BASE_URL)
     login()
     SheetsImport().cleanSheet(
