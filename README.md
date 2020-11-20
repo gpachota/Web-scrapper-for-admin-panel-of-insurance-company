@@ -36,7 +36,6 @@ Open terminal in your project directory and type `python3 main.py` if you are on
 To-do list:
 * Change export method from all to single
 * Change list of information to database
-* Change Google Chrome for non header version
 * Add Machine Learning functions to predict if we can order parts before we get the device
 * Clean up all data to database for future statistics
 
