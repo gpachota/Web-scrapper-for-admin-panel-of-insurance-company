@@ -12,7 +12,7 @@ def set_model_name(model_name):
                        "Flip 4", "EP ML992EE", "E45BT", "Xperia 10", "Xperia L3", "A71", "A7", "Free X", "Note 10 Lite", "E65BT", "BEATSX MTH62EE/A", "Solo3 Wireless",
                        "SYNCHROS E 50 4.0", "Xtreme 2", "MDR-XB950B1B", "Studio3 Wireless", "Xcover 4S G398", "E55BT", "Playstation 4",
                        "iPhone 11 Pro", "iPhone 11", "Charge 4", "Solo 2 Wireless", "Tune 600BT", "S20 Ultra 5G G988", "WH1000XM3", "Everest Elite 700", "S20+", "S20 Plus", "S20", "Boombox",
-                       "Xperia L4", "A21s", "M31s"]
+                       "Xperia L4", "A21s", "M31s", "M11"]
 
     model_name_list_real = ["iPhone 4s", "iPhone 4", "iPhone 5C", "iPhone 5S", "iPhone 5", "iPhone 6S Plus", "iPhone 6S", "iPhone 6 Plus", "iPhone 6", "iPhone 7 Plus",
                             "iPhone 7", "iPhone 8 Plus", "iPhone 8", "iPhone SE", "iPhone XS Max", "iPhone XS", "iPhone Xr", "iPhone X", "Iphone 11 Pro Max", "A3 A310",
@@ -27,7 +27,7 @@ def set_model_name(model_name):
                             "Flip 4", "EP ML992EE", "E45BT", "Xperia 10", "Xperia L3", "A71 A715", "A7 A750", "Free X", "Note 10 Lite N770", "E65BT", "BEATSX MTH62EE/A", "Solo3 Wireless",
                             "SYNCHROS E 50 4.0", "Xtreme 2", "MDR-XB950B1B", "Studio3 Wireless", "Xcover 4S G398", "E55BT", "Playstation 4",
                             "iPhone 11 Pro", "iPhone 11", "Charge 4", "Solo 2 Wireless", "Tune 600BT", "S20 Ultra 5G G988", "WH1000XM3", "Everest Elite 700", "S20+ G985", "S20+ G985", "S20 G980", "Boombox",
-                            "Xperia L4", "A21s A217", "M31s M317"]
+                            "Xperia L4", "A21s A217", "M31s M317", "M11 M115"]
 
     for i in model_name_list:
         if i.lower() in model_name.lower():
