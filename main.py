@@ -14,6 +14,9 @@ from Resources.CredentialData import UserData, MainData
 
 from SheetsInOut import SheetsImport, SheetsExport
 
+import numpy as np
+import pandas as pd
+
 chrome_options = webdriver.ChromeOptions()
 chrome_options.add_argument('--headless')
 
@@ -49,21 +52,26 @@ def login():
     print("Logged in")
     return None
 
+def update_df_cell(row, column, value):
+    df.loc[df['ticket_number'] == int(row), column] = value
+
 
 def tickets_import():
     tickets_import = SheetsImport().importData()
-    tickets_list = []
-    x = 0
+
+    feature_list = ['ticket_number', 'customer_name', 'customer_adress', 'insurance_type', 'insurance_sum',
+                'device_info1', 'device_info2', 'device_model', 'shipment_date', 'ticket_description', 'ticket_circumstances', 'colour']
+
+    global df
+    df = pd.DataFrame(np.nan, index=np.arange(len(tickets_import)), columns=feature_list)
+    df['ticket_number'][0:len(tickets_import)] = tickets_import
 
     for i in tickets_import:
         if open_ticket(i) != True:
             click(Locators.POPUP_OK_BUTTON)
         else:
             tickets = get_ticket_info(i, len(tickets_import), tickets_import)
-            tickets_list.append([])
-            tickets_list[x].append(tickets)
-            x += 1
-    return tickets_list
+    return df
 
 
 def open_ticket(ticketnumber):
@@ -82,6 +90,7 @@ def open_ticket(ticketnumber):
 
 def get_ticket_number():
     """Get ticket number"""
+    global ticket_number
     ticket_number = get_text(Locators.TICKET_NUMBER_DIV)
 
     return ticket_number
@@ -89,24 +98,30 @@ def get_ticket_number():
 
 def get_ticket_description():
     """Get ticket description"""
-    description = get_text(Locators.TICKET_DESCRIPTION_1)
-    circumstances = get_text(Locators.TICKET_DESCRIPTION_2)
 
-    return description, circumstances
+    update_df_cell(ticket_number, 'ticket_description', get_text(Locators.TICKET_DESCRIPTION_1))
+    update_df_cell(ticket_number, 'ticket_circumstances', get_text(Locators.TICKET_DESCRIPTION_2))
+
+    return None
 
 def get_customer_info():
     """Get customer info"""
-    name = get_text(Locators.CUSTOMER_NAME_ID)
-    address = get_text(Locators.CUSTOMER_ADDRESS)
 
-    return name, address
+    update_df_cell(ticket_number, 'customer_name', get_text(Locators.CUSTOMER_NAME_ID))
+    update_df_cell(ticket_number, 'customer_adress', get_text(Locators.CUSTOMER_ADDRESS))
+
+    return None
 
 def get_insurance_type():
     """Get insurance type info"""
+    global insurance_type
+
     insurance_type_readed = get_text(Locators.INSURANCE_TYPE)
     insurance_type = check_insurance_type(insurance_type_readed)
 
-    return insurance_type
+    update_df_cell(ticket_number, 'insurance_type', insurance_type)
+
+    return None
 
 def check_insurance_type(insurance_type):
     """Check if insurance type is acutally in base dictionary"""
@@ -123,52 +138,62 @@ def check_insurance_type(insurance_type):
 
 def get_insurance_sum():
     """Get insurance sum"""
-    insurance_sum = driver.find_element_by_xpath(
-        "//div[@id=\"operationpanel\"]/div[@id=\"danepolisy\"]/div[@class=\"polcontent\"]/table/tbody/tr[20]/td[2]").text
+    if insurance_type == "partner":
+        insurance_sum = driver.find_element_by_xpath(
+            "/html/body/div[1]/div[6]/div[1]/div/table/tbody/tr[18]/td[2]").text
+    else:
+        insurance_sum = driver.find_element_by_xpath(
+            "//div[@id=\"operationpanel\"]/div[@id=\"danepolisy\"]/div[@class=\"polcontent\"]/table/tbody/tr[20]/td[2]").text
 
-    return insurance_sum
+    update_df_cell(ticket_number, 'insurance_sum', insurance_sum)
+
+    return None
 
 def get_device_info():
     """Get device info"""
-    info_1 = get_text(Locators.DEVICE_INFO_1)
-    info_2 = get_text(Locators.DEVICE_INFO_2)
+    global device_info1
+    global device_info2
+    device_info1 = get_text(Locators.DEVICE_INFO_1)
+    device_info2 = get_text(Locators.DEVICE_INFO_2)
 
-    return info_1, info_2
+    update_df_cell(ticket_number, 'device_info1', get_text(Locators.DEVICE_INFO_1))
+    update_df_cell(ticket_number, 'device_info2', get_text(Locators.DEVICE_INFO_2))
+
+    return None
 
 def get_ticket_info(i, tickets_import_length, tickets_import):
 
     # wait until site is ready
-    ticket_number = get_ticket_number()
-    ticket_description, ticket_circumstances = get_ticket_description()
+    get_ticket_number()
+    get_ticket_description()
 
     # customer data
-    customer_name, customer_adress = get_customer_info()
+    get_customer_info()
 
     # insurance data
-    insurance_type = get_insurance_type()
-    insurance_sum = get_insurance_sum()
+    get_insurance_type()
+    get_insurance_sum()
 
     # device info
-    device_info1, device_info2 = get_device_info()
+    get_device_info()
 
     # shipment info
-    shipment_date = get_shipment_date()
+    update_df_cell(ticket_number, 'shipment_date', get_shipment_date())
 
     print(str(tickets_import.index(i)+1) + "/" +
           str(tickets_import_length) + " Done")
 
     if device_info2 != "":
-        model = set_model_name(device_info2)
-        colour = set_device_colour(device_info2)
-        return (ticket_number, customer_name, customer_adress, insurance_type, insurance_sum, device_info1, model, shipment_date, ticket_description, ticket_circumstances, colour)
-    elif device_info2 == "":
-        model = set_model_name(device_info1)
-        colour = set_device_colour(device_info1)
-        return (ticket_number, customer_name, customer_adress, insurance_type, insurance_sum, device_info1, model, shipment_date, ticket_description, ticket_circumstances, colour)
-    else:
-        colour = ""
-        return (ticket_number, customer_name, customer_adress, insurance_type, insurance_sum, device_info1, device_info2, shipment_date, ticket_description, ticket_circumstances, colour)
 
+        update_df_cell(ticket_number, 'device_model', set_model_name(device_info2))
+        update_df_cell(ticket_number, 'colour', set_device_colour(device_info2))
+
+    elif device_info2 == "":
+
+        update_df_cell(ticket_number, 'device_model', set_model_name(device_info1))
+        update_df_cell(ticket_number, 'colour', set_device_colour(device_info1))
+
+    return None
 
 def get_shipment_date():
 
@@ -182,11 +207,9 @@ def get_shipment_date():
     # check if there is any shipment info
     if check_exists_by_xpath(Locators.SHIPMENT_FIRST_ELEMENT) == True:
         # if exists - check first info
-        print(True)
         i = 1
         shipment_exist = driver.find_element_by_xpath(
             "//table[@id=\"tabkon\"]/tbody/tr[" + str(i) + "]/td[1]").text
-        print(shipment_exist)
         # searching for shipping in
         while shipment_exist != "Odebranie sprzętu do naprawy":
             if shipment_exist == "Reklamacja Odebranie sprzętu do naprawy":
@@ -197,7 +220,6 @@ def get_shipment_date():
                 i += 1
                 shipment_exist = driver.find_element_by_xpath(
                     "//table[@id=\"tabkon\"]/tbody/tr[" + str(i) + "]/td[1]").text
-                print(+1)
         # take date of shippment
         if shipment_exist == "Zwrot sprzętu z naprawy do klienta":
             shipment_date = "ZWROT"
@@ -225,11 +247,10 @@ try:
     driver = webdriver.Chrome(MainData.CHROME_EXECUTABLE_PATH, options=chrome_options)
     driver.get(MainData.BASE_URL)
     login()
-    SheetsImport().cleanSheet(
-        SheetsExport().exportAllData(
+    SheetsExport().exportDataFrame(
             tickets_import()
-            )
         )
+    SheetsImport().cleanSheet()
 finally:
     driver.quit()
     print("Done")

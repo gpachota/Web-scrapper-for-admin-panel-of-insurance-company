@@ -1,6 +1,8 @@
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import pprint
+import gspread_dataframe as gd
+import pandas as pd
 
 from Resources.CredentialData import SheetsData
 
@@ -25,30 +27,17 @@ class SheetsImport():
 			tickets_list.append(int(i[0]))
 
 		print(tickets_list)
+		print("")
 		return (tickets_list)
 
-	def cleanSheet(self, tickets_list):
+	def cleanSheet(self):
 		"""Delete all rows which are done"""
-
 		x = 1
-		for i in range(0, len(tickets_list)):
-			if not tickets_list[i][0][7]:
+		for i in range(0, len(data['ticket_number'].tolist())):
+			if not data.loc[data['ticket_number'] == int(data['ticket_number'].tolist()[i]), 'shipment_date'].empty:
 				x += 1
 			else:
 				self.sheet.delete_row(x)
-				
-	def deleteRow(self, ticket):
-		
-		rows = self.sheet.get_all_values()
-		x = 1
-
-		for i in rows:
-			print(i)
-			if i == ticket[0]:
-				self.sheet.delete_row(x)
-				print(ticket + " deleted")
-			else:
-				x += 1
 
 
 class SheetsExport():
@@ -61,40 +50,18 @@ class SheetsExport():
 	def __init__(self):
 		self.sheet = self.client.open(SheetsData.SHEET_NAME).get_worksheet(2)
 
-	def exportAllData(self, tickets_list):
-		"""Export all tickets"""
+	def exportDataFrame(self, df):
+		"""Update sheet with new tickets"""
+		print("")
+		print(df)
+		existing = gd.get_as_dataframe(self.sheet)
+		updated = existing.append(df)
+		gd.set_with_dataframe(self.sheet, updated)
 
-		next_row = len(self.sheet.get_all_values())
-		for i in range(0, len(tickets_list)):
-			row = []
-			for y in range(11):
-				row.append(tickets_list[i][0][y])
-			print(row)
-			self.sheet.update('A' + str(i + 1 + next_row) + ':K' +
-						str(i + 1 + next_row), tickets_list[i])
-		return tickets_list
+		global data
+		data = df
 
-	def exportSingleData(self, ticket):
-		"""Export single ticket - in progress"""
-
-		next_row = len(self.sheet.get_all_values())
-		ticket.append([])
-
-		# self.sheet.update('A' + str(1 + next_row) + ':K' + str(1 + next_row), row)
-
-		# Need to change that for something easier.
-
-		self.sheet.update('A' + str(1 + next_row), ticket[0])
-		self.sheet.update('B' + str(1 + next_row), ticket[1])
-		self.sheet.update('C' + str(1 + next_row), ticket[2])
-		self.sheet.update('D' + str(1 + next_row), ticket[3])
-		self.sheet.update('E' + str(1 + next_row), ticket[4])
-		self.sheet.update('F' + str(1 + next_row), ticket[5])
-		self.sheet.update('G' + str(1 + next_row), ticket[6])
-		self.sheet.update('H' + str(1 + next_row), ticket[7])
-		self.sheet.update('I' + str(1 + next_row), ticket[8])
-		self.sheet.update('J' + str(1 + next_row), ticket[9])
-		self.sheet.update('K' + str(1 + next_row), ticket[10])
+		updated.to_csv('export_dataframe.csv', index = False, header=True)
 
 		return None
 
