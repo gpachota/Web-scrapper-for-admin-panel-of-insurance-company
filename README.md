@@ -18,7 +18,7 @@ This program is taking tickets numbers from Google Sheets. Then opens 'BASE_URL'
 Data on insurer has been hidden and will not disclose them :)
 
 ## Technologies
-* Python - version 3.9.0
+* Python - version 3.9.*
 * gspread - version 3.6.0
 * Selenium - version 3.141.0
 
@@ -34,10 +34,7 @@ Open terminal in your project directory and type `python3 main.py` if you are on
 ## Features
 
 To-do list:
-* Change export method from all to single
-* Change list of information to database
 * Add Machine Learning functions to predict if we can order parts before we get the device
-* Clean up all data to database for future statistics
 
 ## Status
 Project is: _in progress_
