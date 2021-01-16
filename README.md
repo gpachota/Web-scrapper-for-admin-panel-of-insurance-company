@@ -35,6 +35,9 @@ Open terminal in your project directory and type `python3 main.py` if you are on
 
 To-do list:
 * Add Machine Learning functions to predict if we can order parts before we get the device
+* Add tests
+* Add error handling
+* Fix minor bugs
 
 ## Status
 Project is: _in progress_
