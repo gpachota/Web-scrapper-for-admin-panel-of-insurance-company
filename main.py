@@ -57,21 +57,40 @@ def update_df_cell(row, column, value):
 
 
 def tickets_import():
-    tickets_import = SheetsImport().importData()
+    global imported_tickets
+    imported_tickets = SheetsImport().importData()
 
     feature_list = ['ticket_number', 'customer_name', 'customer_adress', 'insurance_type', 'insurance_sum',
-                'device_info1', 'device_info2', 'device_model', 'shipment_date', 'ticket_description', 'ticket_circumstances', 'colour']
+                'device_info1', 'device_info2', 'device_model', 'ordered_shipment', 'shipment_date', 'ticket_description', 'ticket_circumstances', 'colour', 'complaint']
 
     global df
-    df = pd.DataFrame(np.nan, index=np.arange(len(tickets_import)), columns=feature_list)
-    df['ticket_number'][0:len(tickets_import)] = tickets_import
+    df = pd.DataFrame(np.nan, index=np.arange(len(imported_tickets)), columns=feature_list)
+    df['ticket_number'][0:len(imported_tickets)] = imported_tickets
 
-    for i in tickets_import:
+    for i in imported_tickets:
         if open_ticket(i) != True:
             click(Locators.POPUP_OK_BUTTON)
+            update_df_cell(i, 'ordered_shipment', 'DEL')
         else:
-            tickets = get_ticket_info(i, len(tickets_import), tickets_import)
-    return df
+            tickets = get_ticket_info(i, len(imported_tickets), imported_tickets)
+
+    existing = SheetsExport().importOldDataFrame()
+    existing_length = len(existing['ticket_number'].tolist())
+
+    # existing.update(df)
+
+    for i in imported_tickets:
+        if existing_length > 0:
+            if i in existing['ticket_number'].tolist():
+                if df.loc[df.ticket_number == i]['ordered_shipment'].values[0] == 'YES':
+                    existing.loc[existing['ticket_number'] == i, 'shipment_date'] = df.loc[df.ticket_number == i]['shipment_date'].values[0]
+                    existing.loc[existing['ticket_number'] == i, 'ordered_shipment'] = df.loc[df.ticket_number == i]['ordered_shipment'].values[0]
+                    df.drop(df[df['ticket_number'] == i].index, inplace = True)
+
+    df_final = existing.append(df)
+    df_final.drop_duplicates(subset = 'ticket_number', keep = 'first', inplace=True)
+
+    return df_final
 
 
 def open_ticket(ticketnumber):
@@ -92,6 +111,9 @@ def get_ticket_number():
     """Get ticket number"""
     global ticket_number
     ticket_number = get_text(Locators.TICKET_NUMBER_DIV)
+    ticket_number_color = driver.find_element_by_xpath("/html/body/div[1]/div[4]/div[1]/b").value_of_css_property('color')
+    if ticket_number_color == "rgba(255, 0, 0, 1)":
+        update_df_cell(ticket_number, 'complaint', 'Reklamacja')
 
     return ticket_number
 
@@ -178,7 +200,12 @@ def get_ticket_info(i, tickets_import_length, tickets_import):
     get_device_info()
 
     # shipment info
-    update_df_cell(ticket_number, 'shipment_date', get_shipment_date())
+    shipment_date = get_shipment_date()
+    if shipment_date != "":
+        update_df_cell(ticket_number, 'shipment_date', shipment_date)
+        update_df_cell(ticket_number, 'ordered_shipment', 'YES')
+    else:
+        update_df_cell(ticket_number, 'ordered_shipment', 'NO')
 
     print(str(tickets_import.index(i)+1) + "/" +
           str(tickets_import_length) + " Done")
@@ -216,6 +243,8 @@ def get_shipment_date():
                 break
             elif shipment_exist == "Zwrot sprzętu z naprawy do klienta":
                 break
+            elif shipment_exist == 'Odebranie sprzętu zastępczego od klienta':
+                break
             else:
                 i += 1
                 shipment_exist = driver.find_element_by_xpath(
@@ -250,7 +279,7 @@ try:
     SheetsExport().exportDataFrame(
             tickets_import()
         )
-    SheetsImport().cleanSheet()
+    SheetsImport().cleanSheet(imported_tickets)
 finally:
     driver.quit()
     print("Done")
