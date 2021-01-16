@@ -30,11 +30,11 @@ class SheetsImport():
 		print("")
 		return (tickets_list)
 
-	def cleanSheet(self):
+	def cleanSheet(self, imported_tickets):
 		"""Delete all rows which are done"""
 		x = 1
-		for i in range(0, len(data['ticket_number'].tolist())):
-			if not data.loc[data['ticket_number'] == int(data['ticket_number'].tolist()[i]), 'shipment_date'].empty:
+		for i in imported_tickets:
+			if data.loc[data.ticket_number == i]['ordered_shipment'].values[0] == 'NO':
 				x += 1
 			else:
 				self.sheet.delete_row(x)
@@ -50,18 +50,25 @@ class SheetsExport():
 	def __init__(self):
 		self.sheet = self.client.open(SheetsData.SHEET_NAME).get_worksheet(2)
 
+	def importOldDataFrame(self):
+		existing = gd.get_as_dataframe(self.sheet)
+
+		return existing
+
 	def exportDataFrame(self, df):
 		"""Update sheet with new tickets"""
-		print("")
-		print(df)
-		existing = gd.get_as_dataframe(self.sheet)
-		updated = existing.append(df)
+
+		updated = df.reset_index(drop=True)
+		updated.drop_duplicates(subset = ['ticket_number'], keep = 'first', inplace=True)
+
 		gd.set_with_dataframe(self.sheet, updated)
 
-		global data
-		data = df
+		print("")
 
-		updated.to_csv('export_dataframe.csv', index = False, header=True)
+		global data
+		data = updated
+
+		updated.to_csv('export_dataframe.csv', index = True, header=True)
 
 		return None
 
