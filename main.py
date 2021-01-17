@@ -53,47 +53,64 @@ def login():
 
 
 def update_df_cell(row, column, value):
+    """Update Cell in DataFrame"""
     df.loc[df['ticket_number'] == int(row), column] = value
+    return None
 
 
 def tickets_import():
+    """Import new ticket numbers"""
     global imported_tickets
-    imported_tickets = SheetsImport().importData()
+    imported_tickets = SheetsImport().import_data()
 
-    feature_list = ['ticket_number', 'customer_name', 'customer_adress', 'insurance_type', 'insurance_sum',
-                    'device_info1', 'device_info2', 'device_model', 'ordered_shipment', 'shipment_date',
-                    'ticket_description', 'ticket_circumstances', 'colour', 'complaint']
+    return imported_tickets
 
+
+def make_dataframe():
+    """Making DataFrame for new tickets"""
     global df
-    df = pd.DataFrame(np.nan, index=np.arange(len(imported_tickets)), columns=feature_list)
-    df['ticket_number'][0:len(imported_tickets)] = imported_tickets
+    column_list = ['ticket_number', 'customer_name', 'customer_adress', 'insurance_type', 'insurance_sum',
+                   'device_info1', 'device_info2', 'device_model', 'ordered_shipment', 'shipment_date',
+                   'ticket_description', 'ticket_circumstances', 'colour', 'complaint']
 
+    df = pd.DataFrame(np.nan, index=np.arange(len(imported_tickets)), columns=column_list)
+    df['ticket_number'][0:len(imported_tickets)] = imported_tickets
+    return df
+
+
+def open_new_tickets():
+    """Loop for opening all new tickets (if possible)"""
     for i in imported_tickets:
         if not open_ticket(i):
             click(Locators.POPUP_OK_BUTTON)
             update_df_cell(i, 'ordered_shipment', 'DEL')
         else:
             get_ticket_info(i, len(imported_tickets), imported_tickets)
+    return df
 
-    existing = SheetsExport().importOldDataFrame()
+
+def check_if_existed_in_older_data():
+    existing = SheetsExport().import_old_dataframe()
     existing_length = len(existing['ticket_number'].tolist())
 
     for i in imported_tickets:
         if existing_length > 0:
             if i in existing['ticket_number'].tolist():
                 if df.loc[df.ticket_number == i]['ordered_shipment'].values[0] == 'YES':
-                    existing.loc[existing['ticket_number'] == i, 'shipment_date'] = df.loc[df.ticket_number == i]['shipment_date'].values[0]
-                    existing.loc[existing['ticket_number'] == i, 'ordered_shipment'] = df.loc[df.ticket_number == i]['ordered_shipment'].values[0]
-                    df.drop(df[df['ticket_number'] == i].index, inplace = True)
+                    existing.loc[existing['ticket_number'] == i, 'shipment_date'] = \
+                        df.loc[df.ticket_number == i]['shipment_date'].values[0]
+                    existing.loc[existing['ticket_number'] == i, 'ordered_shipment'] = \
+                        df.loc[df.ticket_number == i]['ordered_shipment'].values[0]
+                    df.drop(df[df['ticket_number'] == i].index, inplace=True)
 
     df_final = existing.append(df)
-    df_final.drop_duplicates(subset = 'ticket_number', keep = 'first', inplace=True)
+    df_final.drop_duplicates(subset='ticket_number', keep='first', inplace=True)
 
     return df_final
 
 
 def open_ticket(ticketnumber):
-    """Find search input element, put text in it and hit search button.
+    """Find searching window, put text in it and hit search button.
     Check if there is no error popup and if not - go to the fresh open cart in chrome."""
     clear_keys(Locators.SEARCH_TEXTBOX)
     send_keys(Locators.SEARCH_TEXTBOX, ticketnumber)
@@ -171,7 +188,8 @@ def get_insurance_sum():
             "/html/body/div[1]/div[6]/div[1]/div/table/tbody/tr[18]/td[2]").text
     else:
         insurance_sum = driver.find_element_by_xpath(
-            "//div[@id=\"operationpanel\"]/div[@id=\"danepolisy\"]/div[@class=\"polcontent\"]/table/tbody/tr[20]/td[2]").text
+            "//div[@id=\"operationpanel\"]/div[@id=\"danepolisy\"]"
+            "/div[@class=\"polcontent\"]/table/tbody/tr[20]/td[2]").text
 
     update_df_cell(ticket_number, 'insurance_sum', insurance_sum)
 
@@ -281,11 +299,20 @@ def check_exists_by_xpath(xpath):
     return True
 
 
+def main_function():
+    tickets_import()
+    make_dataframe()
+    open_new_tickets()
+    final_df = check_if_existed_in_older_data()
+
+    return final_df
+
+
 if __name__ == "__main__":
     login()
-    SheetsExport().exportDataFrame(
-        tickets_import()
+    SheetsExport().export_dataframe(
+        main_function()
     )
-    SheetsImport().cleanSheet(imported_tickets)
+    SheetsImport().clean_sheet(imported_tickets)
     print("Done")
     driver.quit()
