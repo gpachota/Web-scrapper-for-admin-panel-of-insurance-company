@@ -1,11 +1,13 @@
 from selenium.webdriver.common.by import By
 
+
 class Locators():
 
     # --- Login Page Locators ---
     LOGIN_BUTTON = (By.XPATH, "//button[@onclick=\"f_login()\"]")
     USER_TEXT = (By.ID, "edtLogin")
     PASSWORD_TEXT = (By.ID, "edtPass")
+    AFTER_LOGIN_TEXT = (By.XPATH, '//*[@id="contacts_list"]/h2')
 
     # --- Search Page Locators ---
     SEARCH_TEXTBOX = (By.XPATH, "//input[@id='edtMainSzkSearch']")
