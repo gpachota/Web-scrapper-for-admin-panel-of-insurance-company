@@ -1,10 +1,9 @@
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-import pprint
 import gspread_dataframe as gd
-import pandas as pd
 
 from Resources.CredentialData import SheetsData
+
 
 class SheetsImport():
 	"""Import Class - from Google Sheets to tickets_list"""
@@ -16,21 +15,20 @@ class SheetsImport():
 	def __init__(self):
 		self.sheet = self.client.open(SheetsData.SHEET_NAME).get_worksheet(1)
 
-	def importData(self):
+	def import_data(self):
 		"""Import all tickets numbers from Google Sheets"""
 
 		tickets = self.sheet.get_all_values()
 		tickets_list = []
-
 
 		for i in tickets:
 			tickets_list.append(int(i[0]))
 
 		print(tickets_list)
 		print("")
-		return (tickets_list)
+		return tickets_list
 
-	def cleanSheet(self, imported_tickets):
+	def clean_sheet(self, imported_tickets):
 		"""Delete all rows which are done"""
 		x = 1
 		for i in imported_tickets:
@@ -50,12 +48,12 @@ class SheetsExport():
 	def __init__(self):
 		self.sheet = self.client.open(SheetsData.SHEET_NAME).get_worksheet(2)
 
-	def importOldDataFrame(self):
+	def import_old_dataframe(self):
 		existing = gd.get_as_dataframe(self.sheet)
 
 		return existing
 
-	def exportDataFrame(self, df):
+	def export_dataframe(self, df):
 		"""Update sheet with new tickets"""
 
 		updated = df.reset_index(drop=True)
