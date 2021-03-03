@@ -71,21 +71,21 @@ def make_dataframe():
     global df
     column_list = ['ticket_number', 'customer_name', 'customer_adress', 'insurance_type', 'insurance_sum',
                    'device_info1', 'device_info2', 'device_model', 'ordered_shipment', 'shipment_date',
-                   'ticket_description', 'ticket_circumstances', 'colour', 'complaint']
+                   'shipment_company', 'ticket_description', 'ticket_circumstances', 'colour', 'complaint']
 
     df = pd.DataFrame(np.nan, index=np.arange(len(imported_tickets)), columns=column_list)
     df['ticket_number'][0:len(imported_tickets)] = imported_tickets
     return df
 
 
-def open_new_tickets():
+def open_new_tickets(imported_tickets_list):
     """Loop for opening all new tickets (if possible)"""
-    for i in imported_tickets:
+    for i in imported_tickets_list:
         if not open_ticket(i):
             click(Locators.POPUP_OK_BUTTON)
             update_df_cell(i, 'ordered_shipment', 'DEL')
         else:
-            get_ticket_info(i, len(imported_tickets), imported_tickets)
+            get_ticket_info(i, len(imported_tickets_list), imported_tickets_list)
     return df
 
 
@@ -116,7 +116,7 @@ def open_ticket(ticketnumber):
     send_keys(Locators.SEARCH_TEXTBOX, ticketnumber)
     click(Locators.SEARCH_SUBMIT_BUTTON)
 
-    if check_exists_by_xpath("//*[@id=\"popup_ok\"]"):
+    if check_exists_by_xpath("//*[@id=\"popup_content\"]"):
         return False
     else:
         # switch to new window
@@ -230,6 +230,8 @@ def get_ticket_info(i, tickets_import_length, tickets_import):
     if shipment_date != "":
         update_df_cell(ticket_number, 'shipment_date', shipment_date)
         update_df_cell(ticket_number, 'ordered_shipment', 'YES')
+        shipment_company_name = get_text(Locators.SHIPMENT_COMPANY_NAME)
+        update_df_cell(ticket_number, 'shipment_company', shipment_company_name)
     else:
         update_df_cell(ticket_number, 'ordered_shipment', 'NO')
 
@@ -270,6 +272,8 @@ def get_shipment_date():
                 break
             elif shipment_exist == "Zwrot sprzętu z naprawy do klienta":
                 break
+            elif shipment_exist == "Zwrot złomu do Klienta":
+                break
             elif shipment_exist == 'Odebranie sprzętu zastępczego od klienta':
                 break
             else:
@@ -302,7 +306,7 @@ def check_exists_by_xpath(xpath):
 def main_function():
     tickets_import()
     make_dataframe()
-    open_new_tickets()
+    open_new_tickets(imported_tickets)
     final_df = check_if_existed_in_older_data()
 
     return final_df

@@ -6,3 +6,6 @@ SheetsAPIkey.json
 device_test.py
 __pycache__
 export_dataframe.csv
+.idea
+actual.csv
+testdf.csv

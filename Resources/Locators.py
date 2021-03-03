@@ -30,6 +30,7 @@ class Locators():
     SHIPMENT_PAGE_LINK_LOCATOR = (By.XPATH, "//li[@onclick=\"sm.doWczytajKurier();\"]")
     SHIPMENT_PAGE_WAIT_ELEMENT = (By.CLASS_NAME, "kontaktmenu")
     SHIPMENT_FIRST_ELEMENT = "//table[@id=\"tabkon\"]/tbody/tr[1]/td[1]"
+    SHIPMENT_COMPANY_NAME = (By.XPATH, "/html/body/div[1]/div[6]/div[2]/div[1]/div[2]/h4")
 
-    POPUP_ERROR = "/html/body/div[4]"
+    POPUP_ERROR = "//*[@id=\"popup_content\"]"
     POPUP_OK_BUTTON = (By.XPATH, "//*[@id=\"popup_ok\"]")

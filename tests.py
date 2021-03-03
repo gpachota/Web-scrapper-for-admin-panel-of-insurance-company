@@ -1,6 +1,7 @@
 from main import *
 from Resources.Locators import Locators
 from Resources.CredentialData import UserData, TestData
+from pandas._testing import assert_frame_equal
 
 
 class TestMain:
