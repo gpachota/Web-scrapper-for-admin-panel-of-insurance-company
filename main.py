@@ -1,15 +1,13 @@
 # -*- coding: utf-8 -*-
 
-from selenium import webdriver
+from driver_setup import start_chrome
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 
 from device import set_model_name, set_device_colour
 
 from Resources.Locators import Locators
-
 from Resources.CredentialData import UserData, MainData
 
 from SheetsInOut import SheetsImport, SheetsExport
@@ -17,9 +15,8 @@ from SheetsInOut import SheetsImport, SheetsExport
 import numpy as np
 import pandas as pd
 
-chrome_options = webdriver.ChromeOptions()
-chrome_options.add_argument('--headless')
-
+global driver
+driver = start_chrome(MainData.BASE_URL, MainData.CHROME_EXECUTABLE_PATH)
 
 
 def click(locator):
@@ -38,10 +35,12 @@ def get_text(locator):
     """Find element and get text from it"""
     return WebDriverWait(driver, 10).until(EC.visibility_of_element_located(locator)).text
 
+
 def clear_keys(locator):
     """clear input element"""
     WebDriverWait(driver, 10).until(EC.visibility_of_element_located(locator)).clear()
     return None
+
 
 def login():
     """Login to website"""
@@ -50,56 +49,74 @@ def login():
     click(Locators.LOGIN_BUTTON)
 
     print("Logged in")
-    return None
+    return get_text(Locators.AFTER_LOGIN_TEXT)
+
 
 def update_df_cell(row, column, value):
+    """Update Cell in DataFrame"""
     df.loc[df['ticket_number'] == int(row), column] = value
+    return None
 
 
 def tickets_import():
+    """Import new ticket numbers"""
     global imported_tickets
-    imported_tickets = SheetsImport().importData()
+    imported_tickets = SheetsImport().import_data()
 
-    feature_list = ['ticket_number', 'customer_name', 'customer_adress', 'insurance_type', 'insurance_sum',
-                'device_info1', 'device_info2', 'device_model', 'ordered_shipment', 'shipment_date', 'ticket_description', 'ticket_circumstances', 'colour', 'complaint']
+    return imported_tickets
 
+
+def make_dataframe():
+    """Making DataFrame for new tickets"""
     global df
-    df = pd.DataFrame(np.nan, index=np.arange(len(imported_tickets)), columns=feature_list)
-    df['ticket_number'][0:len(imported_tickets)] = imported_tickets
+    column_list = ['ticket_number', 'customer_name', 'customer_adress', 'insurance_type', 'insurance_sum',
+                   'device_info1', 'device_info2', 'device_model', 'ordered_shipment', 'shipment_date',
+                   'shipment_company', 'ticket_description', 'ticket_circumstances', 'colour', 'complaint']
 
-    for i in imported_tickets:
-        if open_ticket(i) != True:
+    df = pd.DataFrame(np.nan, index=np.arange(len(imported_tickets)), columns=column_list)
+    df['ticket_number'][0:len(imported_tickets)] = imported_tickets
+    return df
+
+
+def open_new_tickets(imported_tickets_list):
+    """Loop for opening all new tickets (if possible)"""
+    for i in imported_tickets_list:
+        if not open_ticket(i):
             click(Locators.POPUP_OK_BUTTON)
             update_df_cell(i, 'ordered_shipment', 'DEL')
         else:
-            tickets = get_ticket_info(i, len(imported_tickets), imported_tickets)
+            get_ticket_info(i, len(imported_tickets_list), imported_tickets_list)
+    return df
 
-    existing = SheetsExport().importOldDataFrame()
+
+def check_if_existed_in_older_data():
+    existing = SheetsExport().import_old_dataframe()
     existing_length = len(existing['ticket_number'].tolist())
-
-    # existing.update(df)
 
     for i in imported_tickets:
         if existing_length > 0:
             if i in existing['ticket_number'].tolist():
                 if df.loc[df.ticket_number == i]['ordered_shipment'].values[0] == 'YES':
-                    existing.loc[existing['ticket_number'] == i, 'shipment_date'] = df.loc[df.ticket_number == i]['shipment_date'].values[0]
-                    existing.loc[existing['ticket_number'] == i, 'ordered_shipment'] = df.loc[df.ticket_number == i]['ordered_shipment'].values[0]
-                    df.drop(df[df['ticket_number'] == i].index, inplace = True)
+                    existing.loc[existing['ticket_number'] == i, 'shipment_date'] = \
+                        df.loc[df.ticket_number == i]['shipment_date'].values[0]
+                    existing.loc[existing['ticket_number'] == i, 'ordered_shipment'] = \
+                        df.loc[df.ticket_number == i]['ordered_shipment'].values[0]
+                    df.drop(df[df['ticket_number'] == i].index, inplace=True)
 
     df_final = existing.append(df)
-    df_final.drop_duplicates(subset = 'ticket_number', keep = 'first', inplace=True)
+    df_final.drop_duplicates(subset='ticket_number', keep='first', inplace=True)
 
     return df_final
 
 
 def open_ticket(ticketnumber):
-    """Find search input element, put text in it and hit search button. Check if there is no error popup and if not - go to the fresh open cart in chrome."""
+    """Find searching window, put text in it and hit search button.
+    Check if there is no error popup and if not - go to the fresh open cart in chrome."""
     clear_keys(Locators.SEARCH_TEXTBOX)
     send_keys(Locators.SEARCH_TEXTBOX, ticketnumber)
     click(Locators.SEARCH_SUBMIT_BUTTON)
 
-    if check_exists_by_xpath("//*[@id=\"popup_ok\"]"):
+    if check_exists_by_xpath("//*[@id=\"popup_content\"]"):
         return False
     else:
         # switch to new window
@@ -107,11 +124,13 @@ def open_ticket(ticketnumber):
         print(str(ticketnumber) + " opened")
         return True
 
+
 def get_ticket_number():
     """Get ticket number"""
     global ticket_number
     ticket_number = get_text(Locators.TICKET_NUMBER_DIV)
-    ticket_number_color = driver.find_element_by_xpath("/html/body/div[1]/div[4]/div[1]/b").value_of_css_property('color')
+    ticket_number_color = driver.find_element_by_xpath("/html/body/div[1]/div[4]/div[1]/b")\
+        .value_of_css_property('color')
     if ticket_number_color == "rgba(255, 0, 0, 1)":
         update_df_cell(ticket_number, 'complaint', 'Reklamacja')
 
@@ -126,6 +145,7 @@ def get_ticket_description():
 
     return None
 
+
 def get_customer_info():
     """Get customer info"""
 
@@ -133,6 +153,7 @@ def get_customer_info():
     update_df_cell(ticket_number, 'customer_adress', get_text(Locators.CUSTOMER_ADDRESS))
 
     return None
+
 
 def get_insurance_type():
     """Get insurance type info"""
@@ -144,6 +165,7 @@ def get_insurance_type():
     update_df_cell(ticket_number, 'insurance_type', insurance_type)
 
     return None
+
 
 def check_insurance_type(insurance_type):
     """Check if insurance type is acutally in base dictionary"""
@@ -158,6 +180,7 @@ def check_insurance_type(insurance_type):
 
     return insurance_type
 
+
 def get_insurance_sum():
     """Get insurance sum"""
     if insurance_type == "partner":
@@ -165,11 +188,13 @@ def get_insurance_sum():
             "/html/body/div[1]/div[6]/div[1]/div/table/tbody/tr[18]/td[2]").text
     else:
         insurance_sum = driver.find_element_by_xpath(
-            "//div[@id=\"operationpanel\"]/div[@id=\"danepolisy\"]/div[@class=\"polcontent\"]/table/tbody/tr[20]/td[2]").text
+            "//div[@id=\"operationpanel\"]/div[@id=\"danepolisy\"]"
+            "/div[@class=\"polcontent\"]/table/tbody/tr[20]/td[2]").text
 
     update_df_cell(ticket_number, 'insurance_sum', insurance_sum)
 
     return None
+
 
 def get_device_info():
     """Get device info"""
@@ -182,6 +207,7 @@ def get_device_info():
     update_df_cell(ticket_number, 'device_info2', get_text(Locators.DEVICE_INFO_2))
 
     return None
+
 
 def get_ticket_info(i, tickets_import_length, tickets_import):
 
@@ -204,6 +230,8 @@ def get_ticket_info(i, tickets_import_length, tickets_import):
     if shipment_date != "":
         update_df_cell(ticket_number, 'shipment_date', shipment_date)
         update_df_cell(ticket_number, 'ordered_shipment', 'YES')
+        shipment_company_name = get_text(Locators.SHIPMENT_COMPANY_NAME)
+        update_df_cell(ticket_number, 'shipment_company', shipment_company_name)
     else:
         update_df_cell(ticket_number, 'ordered_shipment', 'NO')
 
@@ -222,6 +250,7 @@ def get_ticket_info(i, tickets_import_length, tickets_import):
 
     return None
 
+
 def get_shipment_date():
 
     # go into "kurier"
@@ -232,7 +261,7 @@ def get_shipment_date():
     WebDriverWait(driver, 20).until(EC.presence_of_element_located(Locators.SHIPMENT_PAGE_WAIT_ELEMENT))
 
     # check if there is any shipment info
-    if check_exists_by_xpath(Locators.SHIPMENT_FIRST_ELEMENT) == True:
+    if check_exists_by_xpath(Locators.SHIPMENT_FIRST_ELEMENT):
         # if exists - check first info
         i = 1
         shipment_exist = driver.find_element_by_xpath(
@@ -242,6 +271,8 @@ def get_shipment_date():
             if shipment_exist == "Reklamacja Odebranie sprzętu do naprawy":
                 break
             elif shipment_exist == "Zwrot sprzętu z naprawy do klienta":
+                break
+            elif shipment_exist == "Zwrot złomu do Klienta":
                 break
             elif shipment_exist == 'Odebranie sprzętu zastępczego od klienta':
                 break
@@ -272,14 +303,20 @@ def check_exists_by_xpath(xpath):
     return True
 
 
-try:
-    driver = webdriver.Chrome(MainData.CHROME_EXECUTABLE_PATH, options=chrome_options)
-    driver.get(MainData.BASE_URL)
+def main_function():
+    tickets_import()
+    make_dataframe()
+    open_new_tickets(imported_tickets)
+    final_df = check_if_existed_in_older_data()
+
+    return final_df
+
+
+if __name__ == "__main__":
     login()
-    SheetsExport().exportDataFrame(
-            tickets_import()
-        )
-    SheetsImport().cleanSheet(imported_tickets)
-finally:
-    driver.quit()
+    SheetsExport().export_dataframe(
+        main_function()
+    )
+    SheetsImport().clean_sheet(imported_tickets)
     print("Done")
+    driver.quit()

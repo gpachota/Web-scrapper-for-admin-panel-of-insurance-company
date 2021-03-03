@@ -1,11 +1,13 @@
 from selenium.webdriver.common.by import By
 
+
 class Locators():
 
     # --- Login Page Locators ---
     LOGIN_BUTTON = (By.XPATH, "//button[@onclick=\"f_login()\"]")
     USER_TEXT = (By.ID, "edtLogin")
     PASSWORD_TEXT = (By.ID, "edtPass")
+    AFTER_LOGIN_TEXT = (By.XPATH, '//*[@id="contacts_list"]/h2')
 
     # --- Search Page Locators ---
     SEARCH_TEXTBOX = (By.XPATH, "//input[@id='edtMainSzkSearch']")
@@ -28,6 +30,7 @@ class Locators():
     SHIPMENT_PAGE_LINK_LOCATOR = (By.XPATH, "//li[@onclick=\"sm.doWczytajKurier();\"]")
     SHIPMENT_PAGE_WAIT_ELEMENT = (By.CLASS_NAME, "kontaktmenu")
     SHIPMENT_FIRST_ELEMENT = "//table[@id=\"tabkon\"]/tbody/tr[1]/td[1]"
+    SHIPMENT_COMPANY_NAME = (By.XPATH, "/html/body/div[1]/div[6]/div[2]/div[1]/div[2]/h4")
 
-    POPUP_ERROR = "/html/body/div[4]"
+    POPUP_ERROR = "//*[@id=\"popup_content\"]"
     POPUP_OK_BUTTON = (By.XPATH, "//*[@id=\"popup_ok\"]")
